@@ -1,77 +1,127 @@
+import React, { useState } from "react";
 import PropTypes from "prop-types";
+import { updateExpense, deleteExpense } from "../services/api";
 import "./ExpenseList.css";
 
-function ExpenseList({ expenses, onExpenseUpdated, onExpenseDeleted }) {
-  const handleUpdate = (expense) => {
-    const updatedDescription = prompt(
-      "Enter new description:",
-      expense.description
-    );
-    const updatedAmount = parseFloat(
-      prompt("Enter new amount:", expense.amount)
-    );
-    const updatedDate = prompt("Enter new date (YYYY-MM-DD):", expense.date);
+const ExpenseList = ({ expenses, onExpenseUpdated, onExpenseDeleted }) => {
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState({ description: "", amount: "", date: "" });
 
-    if (updatedDescription && updatedAmount && updatedDate) {
-      onExpenseUpdated(expense.id, {
-        ...expense,
-        description: updatedDescription,
-        amount: updatedAmount,
-        date: updatedDate,
-      });
+  const startEdit = (expense) => {
+    setEditingId(expense.id);
+    setForm({
+      description: expense.description,
+      amount: expense.amount,
+      date: expense.date,
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setForm({ description: "", amount: "", date: "" });
+  };
+
+  const handleSave = async (id) => {
+    try {
+      const payload = {
+        description: form.description,
+        amount: Number(form.amount),
+        date: form.date,
+      };
+      await updateExpense(id, payload);
+      setEditingId(null);
+      onExpenseUpdated(); // refresh list after update
+    } catch (err) {
+      console.error("Error updating expense:", err);
+      alert("Failed to update expense");
     }
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this expense?")) {
-      onExpenseDeleted(id);
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this expense?")) return;
+    try {
+      await deleteExpense(id);
+      onExpenseDeleted(); // refresh list after delete
+    } catch (err) {
+      console.error("Error deleting expense:", err);
+      alert("Failed to delete expense");
     }
   };
+
+  if (!expenses || expenses.length === 0) {
+    return <p>No expenses to display.</p>;
+  }
 
   return (
     <div className="expense-list">
-      {expenses.length === 0 ? (
-        <p>No expenses available.</p>
-      ) : (
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Description</th>
-              <th>Actions</th>
+      <h2>Expense List</h2>
+      <table className="expense-table">
+        <thead>
+          <tr>
+            <th>Description</th>
+            <th>Amount</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {expenses.map((exp) => (
+            <tr key={exp.id}>
+              {editingId === exp.id ? (
+                <>
+                  <td>
+                    <input
+                      type="text"
+                      value={form.description}
+                      onChange={(e) =>
+                        setForm({ ...form, description: e.target.value })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      value={form.amount}
+                      onChange={(e) =>
+                        setForm({ ...form, amount: e.target.value })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={(e) =>
+                        setForm({ ...form, date: e.target.value })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <button onClick={() => handleSave(exp.id)}>Save</button>
+                    <button onClick={cancelEdit}>Cancel</button>
+                  </td>
+                </>
+              ) : (
+                <>
+                  <td>{exp.description}</td>
+                  <td>₹{exp.amount}</td>
+                  <td>{exp.date}</td>
+                  <td>
+                    <button onClick={() => startEdit(exp)}>Edit</button>
+                    <button onClick={() => handleDelete(exp.id)}>Delete</button>
+                  </td>
+                </>
+              )}
             </tr>
-          </thead>
-          <tbody>
-            {expenses.map((expense) => (
-              <tr key={expense.id}>
-                <td>{new Date(expense.date).toLocaleDateString()}</td>
-                <td>₹ {expense.amount.toFixed(2)}</td>
-                <td>{expense.description}</td>
-                <td>
-                  <button onClick={() => handleUpdate(expense)}>Update</button>
-                  <button onClick={() => handleDelete(expense.id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
     </div>
   );
-}
+};
 
 ExpenseList.propTypes = {
-  expenses: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      date: PropTypes.string.isRequired,
-      amount: PropTypes.number.isRequired,
-      description: PropTypes.string.isRequired,
-    })
-  ).isRequired,
+  expenses: PropTypes.array.isRequired,
   onExpenseUpdated: PropTypes.func.isRequired,
   onExpenseDeleted: PropTypes.func.isRequired,
 };

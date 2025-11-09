@@ -12,9 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
+@CrossOrigin(origins = "http://localhost:3000")
 @RequestMapping("/api/expenses")
 public class ExpenseController {
+
     @Autowired
     private ExpenseService expenseService;
 
@@ -24,7 +25,8 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<Expense> getExpenses(@RequestParam(required = false) LocalDate startDate, @RequestParam(required = false) LocalDate endDate) {
+    public List<Expense> getExpenses(@RequestParam(required = false) LocalDate startDate,
+                                     @RequestParam(required = false) LocalDate endDate) {
         return expenseService.getExpenses(startDate, String.valueOf(endDate));
     }
 

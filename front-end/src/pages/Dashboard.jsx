@@ -13,7 +13,6 @@ function Dashboard() {
   const [endDate, setEndDate] = useState("");
   const [error, setError] = useState(null);
 
-  // Function to get the current month expenses
   const getCurrentMonthExpenses = (expenses) => {
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -28,7 +27,6 @@ function Dashboard() {
     });
   };
 
-  // Fetch expenses from the API and handle them
   const fetchExpenses = async () => {
     try {
       const data = await getExpenses(startDate, endDate);
@@ -42,7 +40,6 @@ function Dashboard() {
       );
       setExpenses(sortedExpenses);
 
-      // Default to showing current month's expenses if no filter is applied
       if (!startDate && !endDate) {
         setFilteredExpenses(getCurrentMonthExpenses(sortedExpenses));
       } else {
@@ -71,7 +68,6 @@ function Dashboard() {
       const updatedExpenses = [...expenses, newExpense];
       setExpenses(updatedExpenses);
 
-      // Update filtered expenses
       if (!startDate && !endDate) {
         setFilteredExpenses(getCurrentMonthExpenses(updatedExpenses));
       } else {
